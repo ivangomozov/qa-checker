@@ -7,6 +7,7 @@
 
 **Pre-launch QA tool for landing pages.** Paste a URL — get a full report in seconds.
 
+> ![Preview](preview.png)
 > Checks SEO, accessibility, forms, broken links, tracking scripts and performance — all without touching or submitting anything on the page.
 
 ---
