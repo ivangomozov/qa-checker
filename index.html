@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QA Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0e0e0f;
+      --s1:       #141415;
+      --s2:       #1a1a1b;
+      --s3:       #222224;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.11);
+      --text:     rgba(255,255,255,0.88);
+      --muted:    rgba(255,255,255,0.38);
+      --faint:    rgba(255,255,255,0.18);
+      --ok:       #86efac;
+      --ok-bg:    rgba(134,239,172,0.08);
+      --ok-bd:    rgba(134,239,172,0.18);
+      --warn:     #fde68a;
+      --warn-bg:  rgba(253,230,138,0.08);
+      --warn-bd:  rgba(253,230,138,0.18);
+      --err:      #fca5a5;
+      --err-bg:   rgba(252,165,165,0.08);
+      --err-bd:   rgba(252,165,165,0.18);
+      --accent:   #a78bfa;
+      --mono:     'JetBrains Mono', monospace;
+      --sans:     'Inter', system-ui, sans-serif;
+      --radius:   10px;
+      --radius-lg: 14px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 400;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -180px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(120,100,255,0.09) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: 44px 44px;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.5) 12%, rgba(0,0,0,.5) 55%, transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.5) 12%, rgba(0,0,0,.5) 55%, transparent 100%);
+    }
+
+    .shell { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* topbar */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0;
+      border-bottom: 0.5px solid var(--border);
+      margin-bottom: 64px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--s2); border: 0.5px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 13px; height: 13px; }
+    .logo-name { font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: 0.01em; }
+    .topbar-tag {
+      font-size: 11px; color: var(--faint);
+      border: 0.5px solid var(--border);
+      border-radius: 100px; padding: 3px 11px; letter-spacing: 0.04em;
+    }
+
+    /* hero */
+    .hero { text-align: center; margin-bottom: 40px; }
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; color: var(--muted);
+      border: 0.5px solid var(--border); border-radius: 100px;
+      padding: 4px 13px; margin-bottom: 24px;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .hero h1 {
+      font-size: 36px; font-weight: 300; color: var(--text);
+      line-height: 1.2; letter-spacing: -0.03em; margin-bottom: 14px;
+    }
+    .hero h1 strong { font-weight: 500; color: #fff; }
+    .hero p { font-size: 14px; color: var(--muted); line-height: 1.65; max-width: 360px; margin: 0 auto; }
+
+    /* input */
+    .input-card {
+      background: var(--s1); border: 0.5px solid var(--border2);
+      border-radius: var(--radius-lg); padding: 10px; margin-bottom: 48px;
+    }
+    .input-row { display: flex; gap: 8px; align-items: center; }
+    #url-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: var(--mono); font-size: 13px; color: var(--text);
+      padding: 8px 12px; min-width: 0;
+    }
+    #url-input::placeholder { color: var(--faint); }
+    .run-btn {
+      background: rgba(255,255,255,0.92); color: #111;
+      border: none; border-radius: 8px;
+      padding: 10px 22px; font-size: 13px; font-weight: 500;
+      font-family: var(--sans); cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .run-btn:hover { opacity: .88; }
+    .run-btn:active { transform: scale(.98); }
+    .run-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    .progress-wrap { padding: 6px 4px 2px; display: none; }
+    .progress-wrap.show { display: block; }
+    .progress-track { height: 2px; background: var(--s3); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); width: 0; transition: width .5s ease; border-radius: 2px; }
+    .progress-txt { font-size: 11px; font-family: var(--mono); color: var(--faint); margin-top: 8px; }
+
+    /* states */
+    .state-empty { text-align: center; padding: 64px 0; color: var(--muted); font-size: 14px; }
+    .state-loading { display: none; text-align: center; padding: 64px 0; }
+    .state-loading.show { display: block; }
+    .spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--s3); border-top-color: var(--accent);
+      animation: spin .75s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .state-loading p { font-size: 13px; color: var(--muted); }
+
+    /* results */
+    .results { display: none; }
+    .results.show { display: block; }
+
+    .results-meta {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+    }
+    .meta-label { font-size: 12px; color: var(--faint); font-family: var(--mono); }
+    .meta-label b { color: var(--muted); font-weight: 400; }
+    .csv-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--muted);
+      background: var(--s2); border: 0.5px solid var(--border);
+      border-radius: 7px; padding: 6px 13px; cursor: pointer;
+      transition: border-color .15s, color .15s; font-family: var(--sans);
+    }
+    .csv-btn:hover { border-color: var(--border2); color: var(--text); }
+
+    /* summary */
+    .summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 20px; }
+    .s-card {
+      background: var(--s1); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 16px; text-align: center;
+    }
+    .s-num { font-size: 26px; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .s-num.ok   { color: var(--ok); }
+    .s-num.warn { color: var(--warn); }
+    .s-num.err  { color: var(--err); }
+    .s-lbl { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* filters */
+    .filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .ftab {
+      font-size: 11px; font-family: var(--mono); color: var(--faint);
+      border: 0.5px solid var(--border); border-radius: 100px;
+      padding: 4px 12px; cursor: pointer; transition: all .15s;
+      text-transform: uppercase; letter-spacing: 0.05em; background: none;
+    }
+    .ftab:hover { color: var(--muted); border-color: var(--border2); }
+    .ftab.active { color: var(--text); border-color: var(--border2); background: var(--s2); }
+
+    /* section label */
+    .section-lbl { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+
+    /* checks */
+    .checks { display: flex; flex-direction: column; gap: 3px; }
+    .check-item {
+      background: var(--s1); border: 0.5px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      animation: fadeUp .25s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    .check-header {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 14px; cursor: pointer; user-select: none;
+    }
+    .check-header:hover { background: rgba(255,255,255,0.02); }
+
+    .cdot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .ok   .cdot { background: var(--ok); }
+    .warn .cdot { background: var(--warn); }
+    .err  .cdot { background: var(--err); }
+
+    .ccat { font-size: 11px; color: var(--faint); min-width: 82px; letter-spacing: 0.02em; }
+    .cname { font-size: 13px; color: rgba(255,255,255,0.65); flex: 1; }
+    .cbadge {
+      font-size: 10px; padding: 2px 9px; border-radius: 100px;
+      font-weight: 500; letter-spacing: 0.03em; flex-shrink: 0;
+    }
+    .ok   .cbadge { background: var(--ok-bg);   color: var(--ok);   border: 0.5px solid var(--ok-bd); }
+    .warn .cbadge { background: var(--warn-bg); color: var(--warn); border: 0.5px solid var(--warn-bd); }
+    .err  .cbadge { background: var(--err-bg);  color: var(--err);  border: 0.5px solid var(--err-bd); }
+
+    .cchev { font-size: 10px; color: var(--faint); transition: transform .2s; flex-shrink: 0; }
+    .check-item.open .cchev { transform: rotate(180deg); }
+
+    .check-body {
+      display: none; border-top: 0.5px solid var(--border);
+      padding: 11px 14px 12px 40px;
+    }
+    .check-item.open .check-body { display: block; }
+    .check-msg { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 8px; }
+    .check-details { display: flex; flex-direction: column; gap: 3px; }
+    .detail-line {
+      font-size: 11px; font-family: var(--mono); color: var(--faint);
+      background: var(--s2); border: 0.5px solid var(--border);
+      border-radius: 6px; padding: 5px 10px; word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="shell">
+
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 13 13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.3" stroke-linecap="round">
+          <path d="M2 11 L6.5 2 L11 11"/><path d="M3.8 7.5h5.4"/>
+        </svg>
+      </div>
+      <div class="logo-name">QA Checker</div>
+    </div>
+    <div class="topbar-tag">pre-launch inspector</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-pill"><div class="pill-dot"></div>Landing page QA</div>
+    <h1>Check your landing<br><strong>before it goes live</strong></h1>
+    <p>SEO, forms, analytics, broken links, accessibility — full report in seconds.</p>
+  </div>
+
+  <div class="input-card">
+    <div class="input-row">
+      <input id="url-input" type="text" placeholder="https://yourlandingpage.com" autocomplete="off" spellcheck="false"/>
+      <button class="run-btn" id="run-btn" onclick="runCheck()">Run check</button>
+    </div>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-txt" id="progress-txt">Connecting...</div>
+    </div>
+  </div>
+
+  <div class="state-empty" id="state-empty">
+    Enter a URL above to run a full pre-launch QA check.
+  </div>
+
+  <div class="state-loading" id="state-loading">
+    <div class="spinner"></div>
+    <p>Analyzing page — this may take 15–30 seconds</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-meta">
+      <div class="meta-label">Report for: <b id="result-url"></b></div>
+      <button class="csv-btn" onclick="exportCSV()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M8 2v9M4 7l4 4 4-4"/><path d="M2 13h12"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+
+    <div class="summary">
+      <div class="s-card"><div class="s-num ok"   id="cnt-ok">0</div><div class="s-lbl">Passed</div></div>
+      <div class="s-card"><div class="s-num warn" id="cnt-warn">0</div><div class="s-lbl">Warnings</div></div>
+      <div class="s-card"><div class="s-num err"  id="cnt-err">0</div><div class="s-lbl">Errors</div></div>
+    </div>
+
+    <div class="filters">
+      <button class="ftab active" data-f="all"     onclick="setFilter('all',this)">All</button>
+      <button class="ftab"        data-f="ok"      onclick="setFilter('ok',this)">Passed</button>
+      <button class="ftab"        data-f="warning" onclick="setFilter('warning',this)">Warnings</button>
+      <button class="ftab"        data-f="error"   onclick="setFilter('error',this)">Errors</button>
+    </div>
+
+    <div class="section-lbl" id="section-lbl"></div>
+    <div class="checks" id="checks"></div>
+  </div>
+
+</div>
+
+<script>
+  let report = null;
+  let activeFilter = 'all';
+
+  document.getElementById('url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runCheck();
+  });
+
+  async function runCheck() {
+    let url = document.getElementById('url-input').value.trim();
+    if (!url) { document.getElementById('url-input').focus(); return; }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    document.getElementById('state-empty').style.display = 'none';
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('state-loading').classList.add('show');
+    document.getElementById('progress-wrap').classList.add('show');
+    startProgress();
+
+    try {
+      const res = await fetch('/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      report = await res.json();
+      renderReport(report);
+    } catch(e) {
+      document.getElementById('state-loading').classList.remove('show');
+      document.getElementById('state-empty').style.display = 'block';
+      document.getElementById('state-empty').textContent = 'Request failed: ' + e.message;
+    } finally {
+      btn.disabled = false;
+      stopProgress();
+      document.getElementById('state-loading').classList.remove('show');
+    }
+  }
+
+  let progTimer;
+  function startProgress() {
+    const fill = document.getElementById('progress-fill');
+    const txt  = document.getElementById('progress-txt');
+    const steps = [
+      [8,  'Connecting to page...'],
+      [22, 'Checking HTTP & SSL...'],
+      [38, 'Parsing HTML...'],
+      [52, 'Checking SEO tags...'],
+      [66, 'Scanning links...'],
+      [78, 'Analyzing forms...'],
+      [88, 'Detecting tracking scripts...'],
+      [94, 'Finalizing report...'],
+    ];
+    let i = 0;
+    fill.style.width = '0%';
+    clearInterval(progTimer);
+    progTimer = setInterval(() => {
+      if (i < steps.length) { fill.style.width = steps[i][0] + '%'; txt.textContent = steps[i][1]; i++; }
+    }, 1900);
+  }
+
+  function stopProgress() {
+    clearInterval(progTimer);
+    document.getElementById('progress-fill').style.width = '100%';
+    setTimeout(() => document.getElementById('progress-wrap').classList.remove('show'), 400);
+  }
+
+  function renderReport(data) {
+    try {
+      const parsed = new URL(data.url);
+      document.getElementById('result-url').textContent = parsed.hostname + (parsed.pathname !== '/' ? parsed.pathname : '');
+    } catch(e) {
+      document.getElementById('result-url').textContent = data.url;
+    }
+    document.getElementById('cnt-ok').textContent   = data.summary.ok;
+    document.getElementById('cnt-warn').textContent = data.summary.warning;
+    document.getElementById('cnt-err').textContent  = data.summary.error;
+
+    activeFilter = 'all';
+    document.querySelectorAll('.ftab').forEach(t => t.classList.toggle('active', t.dataset.f === 'all'));
+    renderChecks(data.checks);
+    document.getElementById('results').classList.add('show');
+  }
+
+  function setFilter(f, el) {
+    activeFilter = f;
+    document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderChecks(report.checks);
+  }
+
+  function renderChecks(checks) {
+    const list = document.getElementById('checks');
+    const lbl  = document.getElementById('section-lbl');
+    list.innerHTML = '';
+    const filtered = activeFilter === 'all' ? checks : checks.filter(c => c.status === activeFilter);
+    lbl.textContent = filtered.length + ' check' + (filtered.length !== 1 ? 's' : '');
+
+    filtered.forEach((c, i) => {
+      const cls   = c.status === 'ok' ? 'ok' : c.status === 'warning' ? 'warn' : 'err';
+      const badge = c.status === 'ok' ? 'OK' : c.status === 'warning' ? 'Warning' : 'Error';
+      const hasD  = c.details && (Array.isArray(c.details) ? c.details.length : c.details);
+      const detailsHtml = hasD
+        ? '<div class="check-details">' +
+          (Array.isArray(c.details) ? c.details : [c.details])
+            .map(d => '<div class="detail-line">' + esc(d) + '</div>').join('') +
+          '</div>'
+        : '';
+
+      const el = document.createElement('div');
+      el.className = 'check-item ' + cls;
+      el.style.animationDelay = (i * 0.035) + 's';
+      el.innerHTML =
+        '<div class="check-header" onclick="this.closest(\'.check-item\').classList.toggle(\'open\')">' +
+          '<div class="cdot"></div>' +
+          '<div class="ccat">' + esc(c.category) + '</div>' +
+          '<div class="cname">' + esc(c.name) + '</div>' +
+          '<div class="cbadge">' + badge + '</div>' +
+          '<div class="cchev">▾</div>' +
+        '</div>' +
+        '<div class="check-body">' +
+          '<div class="check-msg">' + esc(c.message) + '</div>' +
+          detailsHtml +
+        '</div>';
+      list.appendChild(el);
+    });
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function exportCSV() {
+    if (!report) return;
+    const res = await fetch('/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checks: report.checks, url: report.url })
+    });
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'qa_report.csv';
+    a.click();
+  }
+</script>
+</body>
+</html>
