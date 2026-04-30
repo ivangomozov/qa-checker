@@ -69,7 +69,3 @@ Click **Export CSV** after any check to download the full report as a spreadshee
 - **Concurrency** — `ThreadPoolExecutor` for parallel link checking
 
 ---
-
-## License
-
-MIT
